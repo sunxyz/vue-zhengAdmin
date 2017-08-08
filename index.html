@@ -1,0 +1,324 @@
+<!DOCTYPE HTML>
+<html lang="zh-cn">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>用户权限管理系统</title>
+
+	<link href="plugins/fullPage/jquery.fullPage.css" rel="stylesheet"/>
+	<link href="plugins/bootstrap-3.3.0/css/bootstrap.min.css" rel="stylesheet"/>
+	<link href="plugins/material-design-iconic-font-2.2.0/css/material-design-iconic-font.min.css" rel="stylesheet"/>
+	<link href="plugins/waves-0.7.5/waves.min.css" rel="stylesheet"/>
+	<link href="plugins/malihu-custom-scrollbar-plugin/jquery.mCustomScrollbar.min.css" rel="stylesheet"/>
+	<link href="app/css/admin.css" rel="stylesheet"/>
+	<style>
+		/** skins **/
+		#bloom-upms-server #header {background: #29A176;}
+		#bloom-upms-server .content_tab{background: #29A176;}
+		#bloom-upms-server .s-profile>a{background: url(app/img/zheng-upms.png) left top no-repeat;}
+
+		#bloom-cms-admin #header {background: #455EC5;}
+		#bloom-cms-admin .content_tab{background: #455EC5;}
+		#bloom-cms-admin .s-profile>a{background: url(app/img/zheng-cms.png) left top no-repeat;}
+
+		#bloom-pay-admin #header {background: #F06292;}
+		#bloom-pay-admin .content_tab{background: #F06292;}
+		#bloom-pay-admin .s-profile>a{background: url(app/img/zheng-pay.png) left top no-repeat;}
+
+		#bloom-ucenter-home #header {background: #6539B4;}
+		#bloom-ucenter-home .content_tab{background: #6539B4;}
+		#bloom-ucenter-home .s-profile>a{background: url(app/img/zheng-ucenter.png) left top no-repeat;}
+
+		#bloom-oss-web #header {background: #0B8DE5;}
+		#bloom-oss-web .content_tab{background: #0B8DE5;}
+		#bloom-oss-web .s-profile>a{background: url(app/img/zheng-oss.png) left top no-repeat;}
+
+		#test #header {background: test;}
+		#test .content_tab{background: test;}
+		#test .s-profile>a{background: url(test) left top no-repeat;}
+	</style>
+</head>
+<body>
+	<div id="app">
+		<div :id="system_skin"> 
+			<admin-header  v-on:click_sys_switch="sys_switch" v-on:click_search="search" :title="system_title" :system_list="system_list" :user_menus="user_menus"></admin-header>
+			<admin-main v-on:click_open_tab="open_tab" :user="user" :user_menus="user_menus" :menus="menus"></admin-main>
+		</div>
+	</div>
+	<template id="admin-header">
+		<header id="header">
+			<ul id="menu">
+				<li id="guide" class="line-trigger">
+					<div class="line-wrap">
+						<div class="line top"></div>
+						<div class="line center"></div>
+						<div class="line bottom"></div>
+					</div>
+				</li>
+				<li id="logo" class="hidden-xs">
+					<a href="index.html">
+						<img src="app/img/logo.png"/>
+					</a>
+					<span id="system_title" v-text="title">权限管理系统</span>
+				</li>
+				<li class="pull-right">
+					<ul class="hi-menu">
+						<!-- 搜索 -->
+						<li class="dropdown">
+							<a class="waves-effect waves-light" data-toggle="dropdown" href="javascript:;">
+								<i class="him-icon zmdi zmdi-search"></i>
+							</a>
+							<ul class="dropdown-menu dm-icon pull-right">
+								<form id="search-form" class="form-inline" v-on:submit.prevent="search">
+									<div class="input-group">
+										<input id="keywords" type="text" :value="search_text" v-model="search_text" class="form-control" placeholder="搜索"/>
+										<div class="input-group-btn">
+											<button type="submit" class="btn btn-default"><span class="glyphicon glyphicon-search"></span></button>
+										</div>
+									</div>
+								</form>
+							</ul>
+						</li>
+						<li class="dropdown">
+							<a class="waves-effect waves-light" data-toggle="dropdown" href="javascript:;">
+								<i class="him-icon zmdi zmdi-dropbox"></i>
+							</a>
+							<!--请选择系统切换-->
+							<ul class="dropdown-menu dm-icon pull-right">
+								<li class="skin-switch">
+									请选择系统切换
+								</li>
+								<li class="divider"></li>
+								<li v-for="sys in system_list"  v-on:click="sys_switch(sys)">
+									<a  class="waves-effect switch-systems" href="javascript:;" ><i class="zmdi" :class="sys.icon"></i> {{sys.title}}</i></a>
+								</li>
+							</ul>
+						</li>
+						<li class="dropdown">
+							<a class="waves-effect waves-light" data-toggle="dropdown" href="javascript:;">
+								<i class="him-icon zmdi zmdi-more-vert"></i>
+							</a>
+							<ul class="dropdown-menu dm-icon pull-right">
+								<li class="hidden-xs">
+									<a class="waves-effect" data-ma-action="fullscreen" href="javascript:fullPage();"><i class="zmdi zmdi-fullscreen"></i> 全屏模式</a>
+								</li>
+								<li>
+									<a class="waves-effect" data-ma-action="clear-localstorage" href="javascript:;"><i class="zmdi zmdi-delete"></i> 清除缓存</a>
+								</li>
+								<!--菜单-->
+								<li v-for="m in user_menus">
+									<a v-if='m.isOpenTab' class="waves-effect" href="javascript:;" v-on:click="open_tab(m)"><i class="zmdi" :class="m.icon"></i> {{m.title}}</a>
+									<a v-else='' class="waves-effect" :href="m.url"><i class="zmdi" :class="m.icon"></i> {{m.title}}</a>
+								</li>
+								
+							</ul>
+						</li>
+					</ul>
+				</li>
+			</ul>
+		</header>
+	</template>
+	
+	<template id="admin-main">
+		<section id="main">
+			<!-- 左侧导航区 -->
+			<admin-sidebar v-on:open_tab="open_tab" :user="user" :user_menus="user_menus" :menus="menus"></admin-sidebar>
+			<!-- /左侧导航区 -->
+			<section id="content">
+				<div class="content_tab">
+					<div class="tab_left">
+						<a class="waves-effect waves-light" href="javascript:;"><i class="zmdi zmdi-chevron-left"></i></a>
+					</div>
+					<div class="tab_right">
+						<a class="waves-effect waves-light" href="javascript:;"><i class="zmdi zmdi-chevron-right"></i></a>
+					</div>
+					<ul id="tabs" class="tabs">
+						<li id="tab_home" data-index="home" data-closeable="false" class="cur">
+							<a class="waves-effect waves-light">首页</a>
+						</li>
+					</ul>
+				</div>
+				<div class="content_main">
+					<div id="iframe_home" class="iframe cur">
+						
+					</div>
+				</div>
+			</section>
+		</section>
+	</template>
+	<template id="admin-sidebar">
+		<aside id="sidebar">
+			<!-- 个人资料区 -->
+			<div class="s-profile">
+				<a class="waves-effect waves-light" href="javascript:;">
+					<div class="sp-pic">
+						<img :src="user.avater"/>
+					</div>
+					<div class="sp-info">
+						{{user.name}} 您好！
+						<i class="zmdi zmdi-caret-down"></i>
+					</div>
+				</a>
+				<ul class="main-menu">
+					<!--菜单-->
+					<li v-for="m in user_menus">
+						<a v-if='m.isOpenTab' class="waves-effect" href="javascript:;" v-on:click="open_tab(m)"><i class="zmdi" :class="m.icon"></i> {{m.title}}</a>
+						<a v-else='' class="waves-effect" :href="m.url"><i class="zmdi" :class="m.icon"></i> {{m.title}}</a>
+					</li>
+				</ul>
+			</div>
+			<!-- /个人资料区 -->
+			<!-- 菜单区 -->
+			<ul class="main-menu">
+				<template v-for="menu in menus">
+					<li v-if="menu.childer==null">
+						<a v-if='menu.isOpenTab' class="waves-effect" href="javascript:;" v-on:click="open_tab(menu)"><i class="zmdi" :class="menu.icon"></i> {{menu.title}}</a>
+						<a v-else='' class="waves-effect" :href="menu.url"><i class="zmdi" :class="menu.icon"></i> {{menu.title}}</a>
+					</li>
+					<li v-else class="sub-menu system_menus " >
+						<a class="waves-effect" href="javascript:;"><i class="zmdi" :class="menu.icon"></i> {{menu.title}}</a>
+						<!--菜单-->
+						<ul>
+							<li v-for="m in menu.childer">
+								<a v-if='m.isOpenTab' class="waves-effect" href="javascript:;" v-on:click="open_tab(m)"><i class="zmdi" :class="m.icon"></i> {{m.title}}</a>
+								<a v-else='' class="waves-effect" :href="m.url"><i class="zmdi" :class="m.icon"></i> {{m.title}}</a>
+							</li>
+						</ul>
+					</li>
+				</template>
+			</ul>
+			<!-- /菜单区 -->
+		</aside>
+	</template>
+	<footer id="footer"></footer>
+
+	<script src="plugins/jquery.1.12.4.min.js"></script>
+	<script src="plugins/bootstrap-3.3.0/js/bootstrap.min.js"></script>
+	<script src="plugins/waves-0.7.5/waves.min.js"></script>
+	<script src="plugins/malihu-custom-scrollbar-plugin/jquery.mCustomScrollbar.concat.min.js"></script>
+	<script src="plugins/BootstrapMenu.min.js"></script>
+	<script src="plugins/device.min.js"></script>
+	<script src="plugins/fullPage/jquery.fullPage.min.js"></script>
+	<script src="plugins/fullPage/jquery.jdirk.min.js"></script>
+	<script src="plugins/jquery.cookie.js"></script>
+
+	<script src="plugins/vue/2.3.4/vue.min.js"></script>
+	<script src="app/js/admin.js"></script>
+	<script>
+			// header
+		Vue.component('admin-header', {
+			template: '#admin-header',
+			props: {
+				title:[String],
+				system_list:[Array],
+				user_menus:[Array]
+			},
+			data:function(){
+				return {
+					search_text:''
+				}
+			},
+			methods:{
+				//将事件提交给父组件
+				sys_switch:function(sys){
+					this.title = sys.title;
+					this.$emit('click_sys_switch', sys)
+				},
+				search:function(){
+					this.$emit('click_search', this.search_text)
+				}
+			}
+		})
+		//main	
+		Vue.component('admin-main', {
+			template: '#admin-main',
+			props: {
+				user:[Object],
+				user_menus:[Array],
+				menus:[Array],
+			},
+			methods:{
+				//将事件提交给父组件
+				open_tab:function(title,url){
+					this.$emit('click_open_tab', title, url);
+				}
+			}
+		})	
+
+		//sidebar
+		Vue.component('admin-sidebar', {
+			template: '#admin-sidebar',
+			props: {
+				user:[Object],
+				user_menus:[Array],
+				menus:[Array]
+			},
+			methods:{
+				//将事件提交给父组件
+				open_tab:function(menu){
+					this.$emit('open_tab', menu.title, menu.url);
+				}
+			}
+		})
+		
+		var data = {
+				system_skin: 'bloom-upms-server',
+				//header
+				system_title:'权限管理系统',
+				system_list:[
+						{id:'1',skin:'bloom-upms-server',title:'权限管理系统',icon:'zmdi-shield-security'},
+						{id:'2',skin:'bloom-cms-admin',title:'内容管理系统',icon:'zmdi-wikipedia'},
+						{id:'3',skin:'bloom-pay-admin',title:'支付管理系统',icon:'zmdi-paypal-alt'},
+						{id:'4',skin:'bloom-ucenter-home',title:'用户管理系统',icon:'zmdi-account'},
+						{id:'5',skin:'bloom-oss-web',title:'存储管理系统',icon:'zmdi-cloud'},
+				],
+				//main
+				user_menus: [
+						{title:'个人资料',icon:'zmdi-account',url:'',isOpenTab:true},
+						{title:'隐私管理',icon:'zmdi-face',url:'',isOpenTab:true},
+						{title:'退出登录',icon:'zmdi-run',url:'?logout',isOpenTab:false}
+				],
+				user:{
+						avater:'app/img/avatar.jpg',
+						name:'bloom'
+				},
+				menus: [
+						{title:'首页',icon:'zmdi-home',url:'home',isOpenTab:true},
+						{title:'系统组织管理',icon:'zmdi-accounts-list',childer:[
+							{title:'系统管理',icon:'zmdi-account',url:'crud.html',isOpenTab:true}
+						]},
+						{title:'其他数据管理',icon:'zmdi-more',childer:[
+							{title:'百度',icon:'zmdi-lock-outline',url:'https://www.baidu.com/',isOpenTab:true},
+						]}
+				]
+			}
+		
+		var vue = new Vue({
+			el:'#app',
+			data: data,
+			crated:function(){
+				this.system_skin = $.cookie('bloom-skin-name') || this.system_list[0].skin;
+				this.system_title = $.cookie('bloom-system-title') || this.system_list[0].title;
+				$('title').text(this.system_title);
+			},
+			methods:{
+				sys_switch:function(sys){
+					$.cookie('bloom-skin-name', sys.skin);
+					$.cookie('bloom-system-title', sys.title);
+					this.system_skin = sys.skin;
+					this.system_title = sys.title;
+					$('title').text(this.system_title);
+				},
+				search:function(q){
+					console.log(q);
+				},
+				open_tab:function(title,url){
+					console.log(title,url)
+					Tab.addTab(title,url)
+				}
+			}
+		})</script>
+	
+</body>
+</html>
